@@ -27,7 +27,6 @@ test:
   stage: test
   script:
     - ./gradlew clean testDebugUnitTest --no-daemon --stacktrace --info
-    - find app/build -name "*.xml" -type f | xargs -I {} sh -c 'echo "Test report: {}"; cat {}'
   artifacts:
     when: always
     reports:
