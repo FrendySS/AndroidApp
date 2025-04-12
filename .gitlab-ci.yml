@@ -6,8 +6,7 @@ stages:
 
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-  ANDROID_BUILD_TOOLS: "34.0.0"
-  CI_DEBUG_TRACE: "true"  # Включаем детальное логирование
+  CI_DEBUG_TRACE: "true"  # Включаем подробное логирование
 
 cache:
   key: ${CI_PROJECT_ID}
@@ -22,17 +21,19 @@ before_script:
   - chmod +x ./gradlew
   - echo "sdk.dir=${ANDROID_HOME}" > local.properties
   - yes | sdkmanager --licenses || true  # Игнорируем предупреждения XML
-  - sdkmanager "platform-tools" "platforms;android-34" "build-tools;${ANDROID_BUILD_TOOLS}"
+  - sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
 test:
   stage: test
   script:
-    - ./gradlew clean testDebugUnitTest --no-daemon --stacktrace --info
-    - ls -laR app/build/test-results/  # Проверяем, создались ли отчеты
+    # Чистим и запускаем тесты с максимально подробным выводом
+    - ./gradlew clean test --no-daemon --stacktrace --info --scan
+    # Проверяем, создались ли отчеты
+    - find app/build -name "*.xml" -type f | xargs -I {} sh -c 'echo "Found test report: {}"; cat {}'
   artifacts:
-    when: always  # Сохраняем артефакты даже при падении тестов
+    when: always
     reports:
-      junit: "app/build/test-results/**/*.xml"
+      junit: "app/build/**/test-results/**/*.xml"  # Более гибкий путь
     paths:
       - "app/build/reports/tests/"
       - "app/build/test-results/"
