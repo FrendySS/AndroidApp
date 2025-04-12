@@ -14,28 +14,33 @@ cache:
 
 before_script:
   - export GRADLE_USER_HOME=$CI_PROJECT_DIR/.gradle
+  - mkdir -p $GRADLE_USER_HOME
   - chmod -R 777 $GRADLE_USER_HOME
   - chmod +x ./gradlew
   - echo "sdk.dir=$ANDROID_HOME" > local.properties
+  - yes | sdkmanager --licenses
   - sdkmanager --update
+
 test:
   stage: test
   script:
-    - ./gradlew clean test
+    - ./gradlew clean testDebugUnitTest
   artifacts:
     reports:
-      junit: app/build/test-results//*.xml
+      junit: app/build/test-results/testDebugUnitTest/*.xml
+    paths:
+      - app/build/reports/tests/testDebugUnitTest/
   except:
     - tags
 
 build:
   stage: build
   script:
-    - ./gradlew clean assembleRelease --no-daemon --refresh-dependencies --stacktrace  # Добавлены флаги для обновления зависимостей и получения стека ошибок
+    - ./gradlew clean assembleRelease --no-daemon --refresh-dependencies --stacktrace
   artifacts:
     paths:
-      - app/build/outputs/apk//*.apk
+      - app/build/outputs/apk/release/*.apk
     expire_in: 1 week
   only:
-    - master
+    - main
     - tags
