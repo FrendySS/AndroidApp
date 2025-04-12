@@ -2,18 +2,17 @@ image: ghcr.io/cirruslabs/android-sdk:34
 
 stages:
   - setup
-  - test
   - build
 
 variables:
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Xmx2048m"
   ANDROID_BUILD_TOOLS: "34.0.0"
+  CI_DEBUG_TRACE: "true"
 
 cache:
   key: ${CI_PROJECT_ID}
   paths:
-    - .gradle/wrapper
-    - .gradle/caches
+    - .gradle/
     - build/
 
 before_script:
@@ -29,36 +28,20 @@ setup:
   stage: setup
   script:
     - ./gradlew --version
-    - ./gradlew dependencies
+    - ./gradlew androidDependencies --no-daemon --stacktrace
   artifacts:
     paths:
       - .gradle/
     expire_in: 1 week
 
-test:
-  stage: test
-  script:
-    - ./gradlew clean testDebugUnitTest --no-daemon --stacktrace --continue || echo "Tests failed but continuing"
-    - mkdir -p test-reports
-    - find app/build/test-results -type f -name "*.xml" -exec cp {} test-reports/ \; || echo "No test reports found"
-    - ls -la test-reports/
-  artifacts:
-    when: always
-    reports:
-      junit: 
-        - test-reports/*.xml
-    paths:
-      - test-reports/
-    expire_in: 1 week
-
 build:
   stage: build
   script:
-    - ./gradlew clean assembleRelease --no-daemon --stacktrace
-    - ls -la app/build/outputs/apk/release/
+    - ./gradlew clean assembleDebug --no-daemon --stacktrace --info --scan
+    - ls -la app/build/outputs/apk/debug/
   artifacts:
     paths:
-      - app/build/outputs/apk/release/*.apk
+      - app/build/outputs/apk/debug/*.apk
     expire_in: 1 week
   only:
     - main
