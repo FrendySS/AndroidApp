@@ -37,9 +37,8 @@ test:
   stage: test
   script:
     - ./gradlew clean testDebugUnitTest --no-daemon --stacktrace --info || true
-    - find . -name "TEST-*.xml" -exec echo "Found test file: {}" \; -exec cat {} \;
     - mkdir -p test-reports
-    - find . -name "TEST-*.xml" -exec cp {} test-reports/ \;
+    - find app/build -name "TEST-*.xml" -exec cp {} test-reports/ \; || echo "No test reports found"
   artifacts:
     when: always
     reports:
