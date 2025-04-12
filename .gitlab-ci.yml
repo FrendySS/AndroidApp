@@ -1,10 +1,10 @@
-image: ubuntu:22.04
+image: openjdk:17-jdk-slim
 
 variables:
   ANDROID_COMPILE_SDK: "35"
   ANDROID_BUILD_TOOLS: "35.0.0"
+  SDK_TOOLS_VERSION: "10406996"  # Актуальная версия на июль 2024
   GRADLE_VERSION: "8.4"
-  SDK_TOOLS_VERSION: "10406996"  # Последняя версия на июнь 2024
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
@@ -18,17 +18,17 @@ stages:
 
 before_script:
   - apt-get update -yq
-  - apt-get install -yq wget unzip zip openjdk-17-jdk
+  - apt-get install -yq wget unzip zip
 
 setup_android_sdk:
   stage: setup
   script:
-    - mkdir -p android-sdk
+    - mkdir -p android-sdk/cmdline-tools/latest
     - wget -q https://dl.google.com/android/repository/commandlinetools-linux-${SDK_TOOLS_VERSION}_latest.zip -O tools.zip
-    - unzip -q tools.zip -d android-sdk/cmdline-tools
-    - mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
+    - unzip -q tools.zip -d android-sdk/cmdline-tools/latest
+    - mv android-sdk/cmdline-tools/latest/cmdline-tools/* android-sdk/cmdline-tools/latest/
+    - rm -rf android-sdk/cmdline-tools/latest/cmdline-tools tools.zip
     - yes | android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$PWD/android-sdk --install "platforms;android-${ANDROID_COMPILE_SDK}" "build-tools;${ANDROID_BUILD_TOOLS}" "platform-tools"
-    - rm tools.zip
   artifacts:
     paths:
       - android-sdk/
@@ -38,7 +38,7 @@ build:
   script:
     - export ANDROID_HOME=$PWD/android-sdk
     - export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
-    - ./gradlew assembleDebug --stacktrace
+    - ./gradlew assembleDebug --stacktrace --no-daemon
   artifacts:
     paths:
       - app/build/outputs/apk/debug/
