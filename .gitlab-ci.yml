@@ -1,61 +1,42 @@
 image: ghcr.io/cirruslabs/android-sdk:34
 
 stages:
-  - setup
   - test
   - build
 
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-  ANDROID_COMPILE_SDK: "34"
   ANDROID_BUILD_TOOLS: "34.0.0"
-  ANDROID_SDK_TOOLS: "10406996"
+  CI_DEBUG_TRACE: "true"  # Включаем детальное логирование
 
 cache:
   key: ${CI_PROJECT_ID}
   paths:
     - .gradle/
     - build/
-    - .android/build-cache/
 
 before_script:
   - export GRADLE_USER_HOME="${CI_PROJECT_DIR}/.gradle"
-  - mkdir -p "${GRADLE_USER_HOME}"
-  - chmod -R 777 "${GRADLE_USER_HOME}"
+  - mkdir -p "$GRADLE_USER_HOME"
+  - chmod -R 777 "$GRADLE_USER_HOME"
   - chmod +x ./gradlew
   - echo "sdk.dir=${ANDROID_HOME}" > local.properties
-  - yes | sdkmanager --licenses
-  - sdkmanager --update
-  - sdkmanager "platform-tools" "platforms;android-${ANDROID_COMPILE_SDK}"
-  - sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}"
-  - sdkmanager "cmake;3.22.1"
-  - sdkmanager "ndk;25.2.9519653"
-
-setup:
-  stage: setup
-  script:
-    - ./gradlew dependencies
-  except:
-    - tags
+  - yes | sdkmanager --licenses || true  # Игнорируем предупреждения XML
+  - sdkmanager "platform-tools" "platforms;android-34" "build-tools;${ANDROID_BUILD_TOOLS}"
 
 test:
   stage: test
   script:
-    - ./gradlew clean testDebugUnitTest --continue --stacktrace
-    - find app/build/test-results -type f -name "*.xml" -exec cat {} \;
+    - ./gradlew clean testDebugUnitTest --no-daemon --stacktrace --info
+    - ls -laR app/build/test-results/  # Проверяем, создались ли отчеты
   artifacts:
-    when: always
+    when: always  # Сохраняем артефакты даже при падении тестов
     reports:
-      junit: 
-        - app/build/test-results/**/*.xml
-        - app/build/outputs/androidTest-results/**/*.xml
+      junit: "app/build/test-results/**/*.xml"
     paths:
-      - app/build/reports/tests/
-      - app/build/test-results/
+      - "app/build/reports/tests/"
+      - "app/build/test-results/"
     expire_in: 7 days
-  allow_failure: false
-  except:
-    - tags
 
 build:
   stage: build
@@ -63,14 +44,11 @@ build:
     - ./gradlew clean assembleRelease --no-daemon --stacktrace
   artifacts:
     paths:
-      - app/build/outputs/apk/**/*.apk
-      - app/build/outputs/bundle/**/*.aab
+      - "app/build/outputs/apk/**/*.apk"
     expire_in: 1 week
   only:
     - main
     - tags
-  dependencies:
-    - test
 
 after_script:
   - rm -f local.properties
