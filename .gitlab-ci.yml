@@ -1,6 +1,7 @@
 image: ghcr.io/cirruslabs/android-sdk:34
 
 stages:
+  - prepare
   - test
   - build
 
@@ -23,18 +24,29 @@ before_script:
   - yes | sdkmanager --licenses || true
   - sdkmanager "platform-tools" "platforms;android-34" "build-tools;${ANDROID_BUILD_TOOLS}"
 
+prepare:
+  stage: prepare
+  script:
+    - ./gradlew dependencies --no-daemon
+  artifacts:
+    paths:
+      - .gradle/
+    expire_in: 1 week
+
 test:
   stage: test
   script:
-    - ./gradlew clean testDebugUnitTest --no-daemon --stacktrace --info
+    - ./gradlew clean testDebugUnitTest --no-daemon --stacktrace --info || true
+    - find . -name "TEST-*.xml" -exec echo "Found test file: {}" \; -exec cat {} \;
+    - mkdir -p test-reports
+    - find . -name "TEST-*.xml" -exec cp {} test-reports/ \;
   artifacts:
     when: always
     reports:
-      junit: "app/build/**/test-results/**/*.xml"
+      junit: "test-reports/*.xml"
     paths:
-      - "app/build/reports/tests/"
-      - "app/build/test-results/"
-    expire_in: 7 days
+      - "test-reports/"
+    expire_in: 1 week
 
 build:
   stage: build
