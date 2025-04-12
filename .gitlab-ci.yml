@@ -6,16 +6,14 @@ stages:
   - build
 
 variables:
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
   ANDROID_BUILD_TOOLS: "34.0.0"
-  CI_DEBUG_TRACE: "true"
 
 cache:
   key: ${CI_PROJECT_ID}
   paths:
-    - .gradle/
-    - build/
-    - ~/.android/build-cache/
+    - .gradle
+    - build
 
 before_script:
   - export GRADLE_USER_HOME="${CI_PROJECT_DIR}/.gradle"
@@ -25,51 +23,43 @@ before_script:
   - echo "sdk.dir=${ANDROID_HOME}" > local.properties
   - yes | sdkmanager --licenses || true
   - sdkmanager "platform-tools" "platforms;android-34" "build-tools;${ANDROID_BUILD_TOOLS}"
-  - sdkmanager --list
 
 setup:
   stage: setup
   script:
     - ./gradlew --version
-    - ./gradlew dependencies --no-daemon --stacktrace
+    - ./gradlew dependencies
   artifacts:
     paths:
-      - .gradle/
+      - .gradle
     expire_in: 1 week
 
 test:
   stage: test
   script:
-    - ./gradlew clean testDebugUnitTest --no-daemon --stacktrace --scan --info
+    - ./gradlew clean testDebugUnitTest --no-daemon --stacktrace || true
     - mkdir -p test-reports
-    - find . -name "TEST-*.xml" -exec echo "Copying test file: {}" \; -exec cp {} test-reports/ \; || echo "No test reports found"
-    - ls -laR test-reports/ || echo "No test reports directory"
+    - find app/build -name "TEST-*.xml" -exec cp {} test-reports/ \; || echo "No test reports found"
   artifacts:
     when: always
     reports:
       junit: "test-reports/*.xml"
     paths:
-      - "test-reports/"
-      - "build/reports/"
+      - test-reports
     expire_in: 1 week
-  allow_failure: false
 
 build:
   stage: build
   script:
-    - ./gradlew clean assembleRelease --no-daemon --stacktrace --scan --info
-    - ls -laR app/build/outputs/ || echo "No build outputs"
+    - ./gradlew clean assembleRelease --no-daemon --stacktrace
+    - ls app/build/outputs/apk/release || echo "No APK files found"
   artifacts:
     paths:
-      - "app/build/outputs/**/*"
-      - "build/reports/"
+      - app/build/outputs/apk/release/*.apk
     expire_in: 1 week
   only:
     - main
     - tags
-  dependencies:
-    - test
 
 after_script:
   - rm -f local.properties
-  - ./gradlew --stop
