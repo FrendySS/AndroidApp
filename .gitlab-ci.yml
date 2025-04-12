@@ -1,132 +1,41 @@
+image: ghcr.io/cirruslabs/android-sdk:34
+
 stages:
-  - prepare
   - test
   - build
-  - upload
-  - move
 
-.default_job_template: &default_job
-  image: registry.gitlab.com/my-project/android-image:latest
-  before_script:
-    - export COUNTRY="${COUNTRY:-KK}"
-    - |
-      set_country_config() {
-        sed -i "s;COUNTRY_VALUE;${COUNTRY};g" app/build.gradle.kts
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
-        if [[ $COUNTRY == "KK" ]]; then
-          sed -i "s;APPLICATION_ID;kz.avtobys.driverboard;g" app/build.gradle.kts
-          sed -i "s;APPLICATION_NAME;Avtobys-driverBoard;g" app/build.gradle.kts
-          sed -i "s;LAUNCHER_ICON;@drawable/ic_launcher_kz;g" app/build.gradle.kts
-        elif [[ $COUNTRY == "KY" ]]; then
-          sed -i "s;APPLICATION_ID;ky.eldikpay.driverboard;g" app/build.gradle.kts
-          sed -i "s;APPLICATION_NAME;Eldikpay-driverBoard;g" app/build.gradle.kts
-          sed -i "s;LAUNCHER_ICON;@mipmap/ic_launcher_ky;g" app/build.gradle.kts
-        fi
-      }
-    - set_country_config
-    - git config --global user.name "GitLab CI"
-    - git config --global user.email "ci@example.com"
-  cache:
-    paths:
-      - .gradle/wrapper
-      - .gradle/caches
-      - ~/.android/build-cache
+cache:
+  paths:
+    - .gradle/wrapper
+    - .gradle/caches
 
-prepare:
-  <<: *default_job
-  stage: prepare
-  script:
-    - echo "Preparing CI/CD pipeline..."
-    - git reset --hard
-    - git clean -fdx
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "alpha"'
-      when: always
-    - if: '$CI_COMMIT_REF_NAME == "beta"'
-      when: always
-    - if: '$CI_COMMIT_REF_NAME == "prod"'
-      when: always
-    - when: never
-
+before_script:
+  - export GRADLE_USER_HOME=$CI_PROJECT_DIR/.gradle
+  - chmod -R 777 $GRADLE_USER_HOME
+  - chmod +x ./gradlew
+  - echo "sdk.dir=$ANDROID_HOME" > local.properties
+  - sdkmanager --update
 test:
-  <<: *default_job
   stage: test
   script:
-    - bash .gitlab-ci/test-jira-task.sh
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: always
-    - when: never
+    - ./gradlew clean test
+  artifacts:
+    reports:
+      junit: app/build/test-results//*.xml
+  except:
+    - tags
 
-build_alpha:
-  <<: *default_job
+build:
   stage: build
   script:
-    - ./gradlew assembleAlphaRelease
+    - ./gradlew clean assembleRelease --no-daemon --refresh-dependencies --stacktrace  # Добавлены флаги для обновления зависимостей и получения стека ошибок
   artifacts:
     paths:
-      - app/build/outputs/apk/alpha/release/app-alpha-release.apk
-    expire_in: 1 day
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "alpha"'
-      when: always
-
-build_beta:
-  <<: *default_job
-  stage: build
-  script:
-    - ./gradlew assembleBetaRelease
-  artifacts:
-    paths:
-      - app/build/outputs/apk/beta/release/app-beta-release.apk
-    expire_in: 1 day
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "beta"'
-      when: always
-
-build_prod:
-  <<: *default_job
-  stage: build
-  script:
-    - ./gradlew assembleProdRelease
-  artifacts:
-    paths:
-      - app/build/outputs/apk/prod/release/app-prod-release.apk
-    expire_in: 1 day
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "prod"'
-      when: always
-
-upload:
-  <<: *default_job
-  stage: upload
-  script:
-    - |
-      if [[ $CI_COMMIT_REF_NAME == "beta" ]]; then
-        APK_PATH="app/build/outputs/apk/beta/release/app-beta-release.apk"
-      elif [[ $CI_COMMIT_REF_NAME == "prod" ]]; then
-        APK_PATH="app/build/outputs/apk/prod/release/app-prod-release.apk"
-      else
-        echo "No upload target for this branch."
-        exit 0
-      fi
-    - echo "Uploading $APK_PATH to storage..."
-    - curl -F "file=@$APK_PATH" https://your-storage.example/upload
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "beta"'
-      when: always
-    - if: '$CI_COMMIT_REF_NAME == "prod"'
-      when: always
-    - when: never
-
-move:
-  <<: *default_job
-  stage: move
-  script:
-    - bash .gitlab-ci/move-task-to-test.sh
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "beta"'
-      when: always
-    - if: '$CI_COMMIT_REF_NAME == "prod"'
-      when: always
-    - when: never
+      - app/build/outputs/apk//*.apk
+    expire_in: 1 week
+  only:
+    - master
+    - tags
