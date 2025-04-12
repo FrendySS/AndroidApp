@@ -3,25 +3,31 @@ image: ubuntu:22.04
 variables:
   ANDROID_COMPILE_SDK: "34"
   ANDROID_BUILD_TOOLS: "34.0.0"
-  ANDROID_SDK_TOOLS: "9477386"
+  ANDROID_SDK_TOOLS: "10406996" # Последняя версия на момент написания
   JAVA_VERSION: "17"
 
 before_script:
-  # Установка зависимостей
-  - apt-get update -y
-  - apt-get install -y wget tar unzip lib32stdc++6 lib32z1 openjdk-${JAVA_VERSION}-jdk
+  # Установка базовых зависимостей
+  - apt-get update -yq
+  - apt-get install -yq wget tar unzip lib32stdc++6 lib32z1 openjdk-${JAVA_VERSION}-jdk
   - export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
 
-  # Установка Android SDK
-  - mkdir -p android-sdk/cmdline-tools
-  - wget -q https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_TOOLS}_latest.zip -O android-sdk.zip
-  - unzip -q android-sdk.zip -d android-sdk/cmdline-tools
-  - mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
+  # Установка Android SDK (новый способ)
+  - mkdir -p android-sdk
+  - cd android-sdk
+  - wget -q https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_TOOLS}_latest.zip
+  - unzip -q commandlinetools-linux-${ANDROID_SDK_TOOLS}_latest.zip
+  - mkdir -p cmdline-tools/latest
+  - mv cmdline-tools/* cmdline-tools/latest
+  - cd ..
   - export ANDROID_HOME="$PWD/android-sdk"
   - export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools"
 
-  # Принятие лицензий и установка компонентов
-  - yes | sdkmanager --licenses > /dev/null
+  # Принятие лицензий (надежный способ)
+  - mkdir -p "$ANDROID_HOME/licenses"
+  - echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_HOME/licenses/android-sdk-license"
+  - echo "84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+  - sdkmanager --update
   - sdkmanager "platform-tools" "platforms;android-${ANDROID_COMPILE_SDK}" "build-tools;${ANDROID_BUILD_TOOLS}"
   - chmod +x ./gradlew
 
@@ -34,7 +40,6 @@ cache:
 stages:
   - build
   - test
-  - deploy
 
 build:
   stage: build
@@ -49,10 +54,3 @@ test:
   stage: test
   script:
     - ./gradlew testDebugUnitTest
-
-deploy:
-  stage: deploy
-  script:
-    - echo "Деплой можно настроить здесь"
-  only:
-    - main
