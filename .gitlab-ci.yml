@@ -8,7 +8,6 @@ stages:
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
   ANDROID_BUILD_TOOLS: "34.0.0"
-  CI_DEBUG_TRACE: "true"
 
 cache:
   key: ${CI_PROJECT_ID}
@@ -30,7 +29,7 @@ setup:
   stage: setup
   script:
     - ./gradlew --version
-    - ./gradlew dependencies --no-daemon --stacktrace
+    - ./gradlew dependencies
   artifacts:
     paths:
       - .gradle/
@@ -41,12 +40,13 @@ test:
   script:
     - ./gradlew clean testDebugUnitTest --no-daemon --stacktrace --continue || echo "Tests failed but continuing"
     - mkdir -p test-reports
-    - find app/build/test-results -name "TEST-*.xml" -exec cp {} test-reports/ \; || echo "No test reports found"
-    - ls -la test-reports/ || echo "No test reports directory"
+    - find app/build/test-results -type f -name "*.xml" -exec cp {} test-reports/ \; || echo "No test reports found"
+    - ls -la test-reports/
   artifacts:
     when: always
     reports:
-      junit: "test-reports/TEST-*.xml"
+      junit: 
+        - test-reports/*.xml
     paths:
       - test-reports/
     expire_in: 1 week
@@ -54,18 +54,15 @@ test:
 build:
   stage: build
   script:
-    - ./gradlew clean assembleRelease --no-daemon --stacktrace --scan
-    - ls -la app/build/outputs/apk/release/ || echo "No APK files found"
+    - ./gradlew clean assembleRelease --no-daemon --stacktrace
+    - ls -la app/build/outputs/apk/release/
   artifacts:
     paths:
       - app/build/outputs/apk/release/*.apk
-      - app/build/outputs/mapping/release/mapping.txt
     expire_in: 1 week
   only:
     - main
     - tags
-  dependencies:
-    - test
 
 after_script:
   - rm -f local.properties
