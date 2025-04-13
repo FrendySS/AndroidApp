@@ -19,7 +19,7 @@ setup:
     - yes | sdkmanager --licenses || echo "⚠️ sdkmanager --licenses failed with $?"
     - sdkmanager "platform-tools" "platforms;android-${COMPILE_SDK_VERSION}" "build-tools;${ANDROID_BUILD_TOOLS}" "ndk;25.2.9519653" || echo "⚠️ sdkmanager components failed with $?"
     - echo "✅ SDKs installed"
-  allow_failure: true  # временно: не блокируем build
+  allow_failure: true
   artifacts:
     paths:
       - .gradle
@@ -30,6 +30,7 @@ build:
   script:
     - echo "🚀 BUILD stage started"
     - export GRADLE_USER_HOME="${CI_PROJECT_DIR}/.gradle"
+    - chmod +x ./gradlew  # ✅ фикс прав доступа
     - ./gradlew :app:assembleDebug --no-daemon --stacktrace --info | tee build.log || true
     - cat build.log | grep -i "error\|exception\|fail" || true
     - ls -la app/build/outputs/apk/debug/ || true
