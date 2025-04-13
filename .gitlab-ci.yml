@@ -1,57 +1,38 @@
-image: ghcr.io/cirruslabs/android-sdk:34
-
 stages:
   - setup
   - build
 
 variables:
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Xmx4096m"
+  ANDROID_COMPILE_SDK: "34"
   ANDROID_BUILD_TOOLS: "34.0.0"
-  COMPILE_SDK_VERSION: "35"
-
-cache:
-  key: ${CI_PROJECT_ID}
-  paths:
-    - .gradle/
-
-before_script:
-  - export GRADLE_USER_HOME="${CI_PROJECT_DIR}/.gradle"
-  - chmod +x ./gradlew
-  - echo "sdk.dir=${ANDROID_HOME}" > local.properties
-  - yes | sdkmanager --licenses
-  - sdkmanager "platform-tools" "platforms;android-${COMPILE_SDK_VERSION}" "build-tools;${ANDROID_BUILD_TOOLS}" "ndk;25.2.9519653"
-  - export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/25.2.9519653"
-  - ls -R .  # Debug: структура проекта
-  - ./gradlew projects
+  ANDROID_SDK_ROOT: "/sdk"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
 setup:
   stage: setup
+  image: ghcr.io/cirruslabs/android-sdk:34
   script:
-    - echo "📦 Running SETUP stage"
-    - ./gradlew --version
-    - ./gradlew androidDependencies --no-daemon --stacktrace
+    - export GRADLE_USER_HOME="${CI_PROJECT_DIR}/.gradle"
+    - chmod +x ./gradlew
+    - echo "sdk.dir=${ANDROID_HOME}" > local.properties
+    - yes | sdkmanager --licenses
   artifacts:
     paths:
-      - .gradle/
-    expire_in: 1 week
+      - .gradle
+    expire_in: 1h
 
 build:
   stage: build
+  image: ghcr.io/cirruslabs/android-sdk:34
   script:
-    - echo "⚙️  Running BUILD stage"
-    - ./gradlew :app:clean :app:assembleDebug --no-daemon --stacktrace --info | tee build.log || true
-    - cat build.log | grep -i "error\|fail\|exception" || true
-    - ls -la app/build/outputs/apk/debug/ || true
+    - export GRADLE_USER_HOME="${CI_PROJECT_DIR}/.gradle"
+    - ./gradlew assembleDebug
+  dependencies:
+    - setup
   artifacts:
     paths:
-      - app/build/outputs/apk/debug/*.apk
-      - build.log
-    expire_in: 1 week
-  only:
-    - main
-    - merge_requests
-    - tags
-    - develop
+      - app/build/outputs/
+    expire_in: 1h
 
 after_script:
   - echo "🧹 Cleaning up after pipeline"
