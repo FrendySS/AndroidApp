@@ -1,3 +1,5 @@
+image: ghcr.io/cirruslabs/android-sdk:34
+
 stages:
   - setup
   - build
@@ -10,12 +12,13 @@ variables:
 
 setup:
   stage: setup
-  image: ghcr.io/cirruslabs/android-sdk:34
   script:
+    - echo "🏗 SETUP stage started"
     - export GRADLE_USER_HOME="${CI_PROJECT_DIR}/.gradle"
     - chmod +x ./gradlew
     - echo "sdk.dir=${ANDROID_HOME}" > local.properties
     - yes | sdkmanager --licenses
+    - echo "✅ SETUP completed"
   artifacts:
     paths:
       - .gradle
@@ -23,16 +26,17 @@ setup:
 
 build:
   stage: build
-  image: ghcr.io/cirruslabs/android-sdk:34
   script:
+    - echo "🚀 BUILD stage started"
     - export GRADLE_USER_HOME="${CI_PROJECT_DIR}/.gradle"
-    - ./gradlew assembleDebug
-  dependencies:
-    - setup
+    - ./gradlew :app:assembleDebug --no-daemon --stacktrace --info | tee build.log || true
+    - cat build.log | grep -i "error\|exception\|fail" || true
+    - ls -la app/build/outputs/apk/debug/ || true
   artifacts:
     paths:
-      - app/build/outputs/
-    expire_in: 1h
+      - app/build/outputs/apk/debug/*.apk
+      - build.log
+    expire_in: 1 week
 
 after_script:
   - echo "🧹 Cleaning up after pipeline"
