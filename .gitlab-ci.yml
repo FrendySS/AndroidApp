@@ -21,12 +21,13 @@ before_script:
   - yes | sdkmanager --licenses
   - sdkmanager "platform-tools" "platforms;android-${COMPILE_SDK_VERSION}" "build-tools;${ANDROID_BUILD_TOOLS}" "ndk;25.2.9519653"
   - export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/25.2.9519653"
-  - ls -R .  # отладка: показывает структуру проекта
+  - ls -R .  # Debug: структура проекта
   - ./gradlew projects
 
 setup:
   stage: setup
   script:
+    - echo "📦 Running SETUP stage"
     - ./gradlew --version
     - ./gradlew androidDependencies --no-daemon --stacktrace
   artifacts:
@@ -37,6 +38,7 @@ setup:
 build:
   stage: build
   script:
+    - echo "⚙️  Running BUILD stage"
     - ./gradlew :app:clean :app:assembleDebug --no-daemon --stacktrace --info | tee build.log || true
     - cat build.log | grep -i "error\|fail\|exception" || true
     - ls -la app/build/outputs/apk/debug/ || true
@@ -52,5 +54,6 @@ build:
     - develop
 
 after_script:
+  - echo "🧹 Cleaning up after pipeline"
   - rm -f local.properties
-  - ./gradlew --stop
+  - ./gradlew --stop || true
