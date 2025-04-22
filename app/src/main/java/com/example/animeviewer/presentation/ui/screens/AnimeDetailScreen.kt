@@ -1,4 +1,4 @@
-package com.example.animeviewer.ui.screens
+package com.example.animeviewer.presentation.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.animeviewer.R
-import com.example.animeviewer.ui.theme.AnimeViewerTheme
+import com.example.animeviewer.presentation.ui.theme.AnimeViewerTheme
 import androidx.compose.animation.core.tween
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)

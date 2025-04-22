@@ -1,4 +1,4 @@
-package com.example.animeviewer
+package com.example.animeviewer.presentation
 
 import AnimatedAppIcon
 import android.os.Bundle
@@ -15,8 +15,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.animeviewer.ui.screens.AnimeDetailScreen
-import com.example.animeviewer.ui.theme.AnimeViewerTheme
+import com.example.animeviewer.presentation.ui.screens.AnimeDetailScreen
+import com.example.animeviewer.presentation.ui.theme.AnimeViewerTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

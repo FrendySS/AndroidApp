@@ -1,5 +1,7 @@
 package com.example.animeviewer.data
 
+import com.example.animeviewer.domain.models.AnimeModel
+
 object AnimeRepository {
     fun getAnimeList(): List<AnimeModel> {
         return listOf(

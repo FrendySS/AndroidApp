@@ -1,4 +1,4 @@
-package com.example.animeviewer.widget
+package com.example.animeviewer.presentation.widget
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager

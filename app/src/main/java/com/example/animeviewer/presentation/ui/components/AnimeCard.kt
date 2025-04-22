@@ -1,4 +1,4 @@
-package com.example.animeviewer.ui.components
+package com.example.animeviewer.presentation.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.animeviewer.data.AnimeModel
+import com.example.animeviewer.domain.models.AnimeModel
 
 @Composable
 fun AnimeCard(anime: AnimeModel, navController: NavController) {

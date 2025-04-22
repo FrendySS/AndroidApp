@@ -1,4 +1,4 @@
-package com.example.animeviewer.ui.components
+package com.example.animeviewer.presentation.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.*

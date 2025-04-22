@@ -1,4 +1,4 @@
-package com.example.animeviewer.ui.theme
+package com.example.animeviewer.presentation.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme

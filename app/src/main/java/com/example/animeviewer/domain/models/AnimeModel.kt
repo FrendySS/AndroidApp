@@ -1,4 +1,4 @@
-package com.example.animeviewer.data
+package com.example.animeviewer.domain.models
 
 data class AnimeModel(
     val id: String,

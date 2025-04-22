@@ -1,19 +1,17 @@
-package com.example.animeviewer.ui.screens
+package com.example.animeviewer.presentation.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.airbnb.lottie.compose.*
-import com.example.animeviewer.ui.components.AnimeCard
-import com.example.animeviewer.ui.components.SearchBar
+import com.example.animeviewer.presentation.ui.components.AnimeCard
+import com.example.animeviewer.presentation.ui.components.SearchBar
 import com.example.animeviewer.data.AnimeRepository
-import com.example.animeviewer.data.AnimeModel
 import com.example.animeviewer.R
 
 @Composable
